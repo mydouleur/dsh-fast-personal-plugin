@@ -1,7 +1,7 @@
 {
   "name": "dsh-fast-personal-plugin",
-  "version": "0.1.0",
-  "description": "Personal DSH plugin list with npm and GitHub Release updates, JSON import/export, and multi-machine bootstrap.",
+  "version": "0.2.0",
+  "description": "Personal DSH plugin list with npm versions, GitHub branch and commit updates, JSON import/export, and multi-machine bootstrap.",
   "type": "module",
   "main": "lib/index.js",
   "types": "lib/types/index.d.ts",
@@ -30,7 +30,8 @@
     "prepack": "npm run build"
   },
   "dependencies": {
-    "semver": "7.8.6"
+    "semver": "7.8.6",
+    "yaml": "2.9.1"
   },
   "peerDependencies": {
     "@deepseek-ai/cordis": "4.1.0"

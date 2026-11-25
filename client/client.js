@@ -77,46 +77,46 @@ window.__ModuleLoader__.load({
 			document.head.appendChild(tag);
 		}
 		var styles_module_css_default = {
-			"secondary": "w2pR0a_secondary",
-			"checkbox": "w2pR0a_checkbox",
-			"cardMain": "w2pR0a_cardMain",
-			"wide": "w2pR0a_wide",
-			"jsonInput": "w2pR0a_jsonInput",
-			"redDot": "w2pR0a_redDot",
-			"danger": "w2pR0a_danger",
-			"empty": "w2pR0a_empty",
-			"source": "w2pR0a_source",
-			"taskOutput": "w2pR0a_taskOutput",
-			"badge": "w2pR0a_badge",
-			"fileInput": "w2pR0a_fileInput",
-			"modal": "w2pR0a_modal",
-			"dangerButton": "w2pR0a_dangerButton",
-			"rowActions": "w2pR0a_rowActions",
-			"primary": "w2pR0a_primary",
 			"headerActions": "w2pR0a_headerActions",
-			"inlineError": "w2pR0a_inlineError",
-			"header": "w2pR0a_header",
-			"modalHeader": "w2pR0a_modalHeader",
-			"modalActions": "w2pR0a_modalActions",
-			"list": "w2pR0a_list",
-			"help": "w2pR0a_help",
 			"overlay": "w2pR0a_overlay",
-			"error": "w2pR0a_error",
-			"spacer": "w2pR0a_spacer",
-			"footer": "w2pR0a_footer",
 			"success": "w2pR0a_success",
-			"selfBadge": "w2pR0a_selfBadge",
+			"wide": "w2pR0a_wide",
+			"danger": "w2pR0a_danger",
+			"spacer": "w2pR0a_spacer",
+			"cardMain": "w2pR0a_cardMain",
+			"badge": "w2pR0a_badge",
+			"tasks": "w2pR0a_tasks",
+			"taskOutput": "w2pR0a_taskOutput",
+			"source": "w2pR0a_source",
+			"fileInput": "w2pR0a_fileInput",
 			"meta": "w2pR0a_meta",
-			"summary": "w2pR0a_summary",
-			"iconButton": "w2pR0a_iconButton",
-			"root": "w2pR0a_root",
+			"redDot": "w2pR0a_redDot",
 			"warning": "w2pR0a_warning",
 			"muted": "w2pR0a_muted",
+			"error": "w2pR0a_error",
+			"help": "w2pR0a_help",
 			"form": "w2pR0a_form",
-			"attention": "w2pR0a_attention",
-			"tasks": "w2pR0a_tasks",
+			"jsonInput": "w2pR0a_jsonInput",
+			"rowActions": "w2pR0a_rowActions",
+			"checkbox": "w2pR0a_checkbox",
+			"empty": "w2pR0a_empty",
+			"footer": "w2pR0a_footer",
+			"iconButton": "w2pR0a_iconButton",
+			"modalHeader": "w2pR0a_modalHeader",
+			"list": "w2pR0a_list",
+			"header": "w2pR0a_header",
+			"modalActions": "w2pR0a_modalActions",
+			"inlineError": "w2pR0a_inlineError",
 			"card": "w2pR0a_card",
-			"titleLine": "w2pR0a_titleLine"
+			"dangerButton": "w2pR0a_dangerButton",
+			"titleLine": "w2pR0a_titleLine",
+			"modal": "w2pR0a_modal",
+			"secondary": "w2pR0a_secondary",
+			"summary": "w2pR0a_summary",
+			"primary": "w2pR0a_primary",
+			"attention": "w2pR0a_attention",
+			"root": "w2pR0a_root",
+			"selfBadge": "w2pR0a_selfBadge"
 		};
 		// src/client/App.tsx
 		function App() {
@@ -206,7 +206,7 @@ window.__ModuleLoader__.load({
 							task: snapshot.tasks.find((task) => task.pluginId === plugin.entry.id),
 							busy: activeTasks.some((task) => task.pluginId === plugin.entry.id),
 							onInstall: () => void run(async () => {
-								if (plugin.entry.source.type === "github" && plugin.entry.source.installMode !== "asset") {
+								if (plugin.entry.source.type === "github") {
 									const message = plugin.installed === null ? "GitHub 源码安装可能执行插件作者的构建脚本。确认信任此来源并继续？" : "更新可能执行插件作者的构建脚本。确认继续？";
 									if (!window.confirm(message)) return;
 								}
@@ -281,9 +281,6 @@ window.__ModuleLoader__.load({
 			} : plugin.state.status === "error" ? {
 				text: "检查失败",
 				className: styles_module_css_default.warning
-			} : plugin.state.status === "no-release" ? {
-				text: "无正式 Release",
-				className: styles_module_css_default.warning
 			} : plugin.state.status === "latest" ? {
 				text: "已是最新",
 				className: styles_module_css_default.success
@@ -323,7 +320,16 @@ window.__ModuleLoader__.load({
 									children: status.text
 								}),
 								plugin.installed !== null && /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", { children: ["当前 ", plugin.installed.version] }),
-								plugin.state.latestVersion !== void 0 && /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", { children: ["最新 ", plugin.state.latestVersion] }),
+								plugin.state.latestVersion !== void 0 && /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", { children: ["远程 ", plugin.state.latestVersion] }),
+								plugin.state.ref !== void 0 && /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", { children: ["跟踪 ", plugin.state.ref] }),
+								plugin.state.remoteCommit !== void 0 && /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
+									title: plugin.state.remoteCommit,
+									children: ["远程 ", plugin.state.remoteCommit.slice(0, 7)]
+								}),
+								(plugin.installed?.commit ?? plugin.state.installedCommit) !== void 0 && /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
+									title: plugin.installed?.commit ?? plugin.state.installedCommit,
+									children: ["本机 ", (plugin.installed?.commit ?? plugin.state.installedCommit).slice(0, 7)]
+								}),
 								plugin.state.lastCheckedAt !== void 0 && /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", { children: ["检查于 ", new Date(plugin.state.lastCheckedAt).toLocaleString()] })
 							]
 						}),
@@ -394,8 +400,7 @@ window.__ModuleLoader__.load({
 			const [identity, setIdentity] = (0, react.useState)(original === void 0 ? "" : original.source.type === "npm" ? original.source.package : original.source.repo);
 			const [packageName, setPackageName] = (0, react.useState)(original?.package ?? "");
 			const github = original?.source.type === "github" ? original.source : null;
-			const [installMode, setInstallMode] = (0, react.useState)(github?.installMode ?? "auto");
-			const [asset, setAsset] = (0, react.useState)(github?.asset ?? "");
+			const [ref, setRef] = (0, react.useState)(github?.ref ?? "");
 			const [enabled, setEnabled] = (0, react.useState)(original?.enabled ?? true);
 			const submit = (event) => {
 				event.preventDefault();
@@ -406,8 +411,7 @@ window.__ModuleLoader__.load({
 				} : {
 					type: "github",
 					repo: value,
-					installMode,
-					...asset.trim() === "" ? {} : { asset: asset.trim() }
+					...ref.trim() === "" ? {} : { ref: ref.trim() }
 				};
 				const entry = {
 					id: type === "npm" ? `npm:${value.toLowerCase()}` : `github:${value.toLowerCase()}`,
@@ -433,7 +437,7 @@ window.__ModuleLoader__.load({
 								children: "npm"
 							}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("option", {
 								value: "github",
-								children: "GitHub Release"
+								children: "GitHub 仓库"
 							})]
 						})] }),
 						/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("label", { children: [type === "npm" ? "npm 包名" : "GitHub 仓库", /* @__PURE__ */ (0, react_jsx_runtime.jsx)("input", {
@@ -442,36 +446,15 @@ window.__ModuleLoader__.load({
 							placeholder: type === "npm" ? "dsh-example 或 @scope/dsh-example" : "owner/repository",
 							required: true
 						})] }),
-						type === "github" && /* @__PURE__ */ (0, react_jsx_runtime.jsxs)(react_jsx_runtime.Fragment, { children: [
-							/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("label", { children: ["实际 npm 包名（可选）", /* @__PURE__ */ (0, react_jsx_runtime.jsx)("input", {
-								value: packageName,
-								onChange: (event) => setPackageName(event.target.value),
-								placeholder: "安装后自动识别"
-							})] }),
-							/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("label", { children: ["安装方式", /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("select", {
-								value: installMode,
-								onChange: (event) => setInstallMode(event.target.value),
-								children: [
-									/* @__PURE__ */ (0, react_jsx_runtime.jsx)("option", {
-										value: "auto",
-										children: "自动：唯一 .tgz 优先，否则源码"
-									}),
-									/* @__PURE__ */ (0, react_jsx_runtime.jsx)("option", {
-										value: "asset",
-										children: "仅预构建 .tgz 资产"
-									}),
-									/* @__PURE__ */ (0, react_jsx_runtime.jsx)("option", {
-										value: "source",
-										children: "仅 Release 标签源码"
-									})
-								]
-							})] }),
-							installMode !== "source" && /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("label", { children: [".tgz 资产文件名（可选）", /* @__PURE__ */ (0, react_jsx_runtime.jsx)("input", {
-								value: asset,
-								onChange: (event) => setAsset(event.target.value),
-								placeholder: "plugin-1.0.0.tgz"
-							})] })
-						] }),
+						type === "github" && /* @__PURE__ */ (0, react_jsx_runtime.jsxs)(react_jsx_runtime.Fragment, { children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("label", { children: ["实际 npm 包名（可选）", /* @__PURE__ */ (0, react_jsx_runtime.jsx)("input", {
+							value: packageName,
+							onChange: (event) => setPackageName(event.target.value),
+							placeholder: "安装后自动识别"
+						})] }), /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("label", { children: ["跟踪分支、标签或 commit（可选）", /* @__PURE__ */ (0, react_jsx_runtime.jsx)("input", {
+							value: ref,
+							onChange: (event) => setRef(event.target.value),
+							placeholder: "留空跟踪仓库默认分支，例如 main"
+						})] })] }),
 						/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("label", {
 							className: styles_module_css_default.checkbox,
 							children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("input", {

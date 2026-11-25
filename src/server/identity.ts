@@ -15,7 +15,6 @@ export function githubRepoOf(value: unknown): string | null {
     /^github:([^/]+)\/([^/]+?)(?:\.git)?(?:#.*)?$/i,
     /^(?:git\+)?https:\/\/github\.com\/([^/]+)\/([^/]+?)(?:\.git)?(?:[?#].*)?$/i,
     /^git@github\.com:([^/]+)\/([^/]+?)(?:\.git)?(?:[?#].*)?$/i,
-    /^https:\/\/github\.com\/([^/]+)\/([^/]+)\/releases\/download\/[^/]+\/[^/]+\.tgz$/i,
     /^https:\/\/codeload\.github\.com\/([^/]+)\/([^/]+)\/tar\.gz\//i,
   ]
   for (const pattern of patterns) {
@@ -53,19 +52,13 @@ export function normalizeSource(value: unknown): PluginSource {
   if (source.type === 'github') {
     const repo = githubRepoOf(source.repo)
     if (repo === null || !REPO_RE.test(repo)) throw new Error('invalid GitHub repository')
-    const installMode = source.installMode
-    if (installMode !== undefined && installMode !== 'auto' && installMode !== 'asset' && installMode !== 'source') {
-      throw new Error('invalid GitHub install mode')
+    if (source.ref !== undefined && (typeof source.ref !== 'string' || !/^[A-Za-z0-9._/@+-]+$/.test(source.ref))) {
+      throw new Error('invalid GitHub ref')
     }
-    if (source.asset !== undefined && (typeof source.asset !== 'string' || !/^[A-Za-z0-9._+-]+\.tgz$/.test(source.asset))) {
-      throw new Error('GitHub asset must be a .tgz filename')
-    }
-    if (installMode === 'source' && source.asset !== undefined) throw new Error('source mode cannot specify an asset')
     return {
       type: 'github',
       repo,
-      ...(installMode === undefined ? {} : { installMode }),
-      ...(typeof source.asset === 'string' ? { asset: source.asset } : {}),
+      ...(typeof source.ref === 'string' ? { ref: source.ref } : {}),
     }
   }
   throw new Error('plugin source must be npm or github')

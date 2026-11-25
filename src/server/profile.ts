@@ -3,6 +3,8 @@ import { basename, dirname, join } from 'node:path'
 import type { InstalledPlugin, PluginEntry } from '../shared/types.ts'
 import { profileDirectory, readJsonFile, writeJsonFile } from './files.ts'
 import { entryId, githubRepoOf, validPackageName } from './identity.ts'
+import { readLockfileCommits } from './lockfile.ts'
+import { gitRefOf } from './updates.ts'
 
 interface ProfileManifest {
   dependencies?: Record<string, string>
@@ -35,18 +37,22 @@ export function scanInstalled(profile: string): Record<string, InstalledPlugin> 
   const bundles = Array.isArray(manifest.dsh?.profile?.bundles)
     ? manifest.dsh.profile.bundles.filter((value): value is string => typeof value === 'string')
     : []
+  const lockfileCommits = readLockfileCommits(directory)
   const installed: Record<string, InstalledPlugin> = {}
   for (const [name, spec] of Object.entries(manifest.dependencies ?? {})) {
     if (name.startsWith('@deepseek-ai/') || !validPackageName(name)) continue
     const metadata = readJsonFile<PackageManifest>(join(directory, 'node_modules', name, 'package.json'))
     if (metadata?.dsh?.bundle === undefined || metadata.dsh.bundle === null) continue
     const repository = repositoryUrl(metadata.repository)
+    const sourceRepo = githubRepoOf(spec) ?? (isLocalSpec(spec) ? githubRepoOf(repository) : null)
+    const commit = sourceRepo === null ? undefined : lockfileCommits.get(sourceRepo.toLowerCase())
     installed[name] = {
       package: name,
       version: typeof metadata.version === 'string' ? metadata.version : '0.0.0',
       spec,
       enabled: bundles.includes(name),
       ...(repository === null ? {} : { repository }),
+      ...(commit === undefined ? {} : { commit }),
     }
   }
   return installed
@@ -57,9 +63,10 @@ export function entryForInstalled(installed: InstalledPlugin): PluginEntry {
   const manifestRepo = githubRepoOf(installed.repository)
   const repo = specRepo ?? (isLocalSpec(installed.spec) ? manifestRepo : null)
   if (repo !== null) {
+    const ref = gitRefOf(installed.spec)
     return {
       id: entryId({ type: 'github', repo }),
-      source: { type: 'github', repo },
+      source: { type: 'github', repo, ...(ref === null ? {} : { ref }) },
       enabled: installed.enabled,
       package: installed.package,
     }

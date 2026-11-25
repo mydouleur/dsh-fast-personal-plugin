@@ -1,6 +1,6 @@
 import { useMemo, useState, useSyncExternalStore } from 'react'
 import type { FormEvent } from 'react'
-import { API_PREFIX, type GithubSource, type PluginEntry, type PluginView } from '../shared/types.ts'
+import { API_PREFIX, type PluginEntry, type PluginView } from '../shared/types.ts'
 import { getSnapshot, post, subscribe } from './store.ts'
 import styles from './styles.module.css'
 
@@ -59,7 +59,7 @@ export function App() {
             task={snapshot.tasks.find((task) => task.pluginId === plugin.entry.id)}
             busy={activeTasks.some((task) => task.pluginId === plugin.entry.id)}
             onInstall={() => void run(async () => {
-              if (plugin.entry.source.type === 'github' && plugin.entry.source.installMode !== 'asset') {
+              if (plugin.entry.source.type === 'github') {
                 const message = plugin.installed === null
                   ? 'GitHub 源码安装可能执行插件作者的构建脚本。确认信任此来源并继续？'
                   : '更新可能执行插件作者的构建脚本。确认继续？'
@@ -127,7 +127,6 @@ function PluginRow(props: {
     : plugin.state.status === 'update' ? { text: '有更新', className: styles.danger }
     : plugin.state.status === 'checking' ? { text: '检查中', className: styles.muted }
     : plugin.state.status === 'error' ? { text: '检查失败', className: styles.warning }
-    : plugin.state.status === 'no-release' ? { text: '无正式 Release', className: styles.warning }
     : plugin.state.status === 'latest' ? { text: '已是最新', className: styles.success }
     : { text: '已安装', className: styles.muted }
   return (
@@ -143,7 +142,10 @@ function PluginRow(props: {
         <div className={styles.meta}>
           <span className={status.className}>{status.text}</span>
           {plugin.installed !== null && <span>当前 {plugin.installed.version}</span>}
-          {plugin.state.latestVersion !== undefined && <span>最新 {plugin.state.latestVersion}</span>}
+          {plugin.state.latestVersion !== undefined && <span>远程 {plugin.state.latestVersion}</span>}
+          {plugin.state.ref !== undefined && <span>跟踪 {plugin.state.ref}</span>}
+          {plugin.state.remoteCommit !== undefined && <span title={plugin.state.remoteCommit}>远程 {plugin.state.remoteCommit.slice(0, 7)}</span>}
+          {(plugin.installed?.commit ?? plugin.state.installedCommit) !== undefined && <span title={plugin.installed?.commit ?? plugin.state.installedCommit}>本机 {(plugin.installed?.commit ?? plugin.state.installedCommit)!.slice(0, 7)}</span>}
           {plugin.state.lastCheckedAt !== undefined && <span>检查于 {new Date(plugin.state.lastCheckedAt).toLocaleString()}</span>}
         </div>
         {plugin.state.error !== undefined && <div className={styles.inlineError}>{plugin.state.error}</div>}
@@ -182,8 +184,7 @@ function PluginForm(props: { original?: PluginEntry; onClose: () => void; onSave
   const [identity, setIdentity] = useState(original === undefined ? '' : original.source.type === 'npm' ? original.source.package : original.source.repo)
   const [packageName, setPackageName] = useState(original?.package ?? '')
   const github = original?.source.type === 'github' ? original.source : null
-  const [installMode, setInstallMode] = useState<GithubSource['installMode']>(github?.installMode ?? 'auto')
-  const [asset, setAsset] = useState(github?.asset ?? '')
+  const [ref, setRef] = useState(github?.ref ?? '')
   const [enabled, setEnabled] = useState(original?.enabled ?? true)
 
   const submit = (event: FormEvent): void => {
@@ -191,7 +192,7 @@ function PluginForm(props: { original?: PluginEntry; onClose: () => void; onSave
     const value = identity.trim()
     const source = type === 'npm'
       ? { type: 'npm' as const, package: value }
-      : { type: 'github' as const, repo: value, installMode, ...(asset.trim() === '' ? {} : { asset: asset.trim() }) }
+      : { type: 'github' as const, repo: value, ...(ref.trim() === '' ? {} : { ref: ref.trim() }) }
     const entry: PluginEntry = {
       id: type === 'npm' ? `npm:${value.toLowerCase()}` : `github:${value.toLowerCase()}`,
       source,
@@ -207,7 +208,7 @@ function PluginForm(props: { original?: PluginEntry; onClose: () => void; onSave
         <label>来源类型
           <select value={type} onChange={(event) => setType(event.target.value as 'npm' | 'github')} disabled={original !== undefined}>
             <option value="npm">npm</option>
-            <option value="github">GitHub Release</option>
+            <option value="github">GitHub 仓库</option>
           </select>
         </label>
         <label>{type === 'npm' ? 'npm 包名' : 'GitHub 仓库'}
@@ -218,18 +219,9 @@ function PluginForm(props: { original?: PluginEntry; onClose: () => void; onSave
             <label>实际 npm 包名（可选）
               <input value={packageName} onChange={(event) => setPackageName(event.target.value)} placeholder="安装后自动识别" />
             </label>
-            <label>安装方式
-              <select value={installMode} onChange={(event) => setInstallMode(event.target.value as GithubSource['installMode'])}>
-                <option value="auto">自动：唯一 .tgz 优先，否则源码</option>
-                <option value="asset">仅预构建 .tgz 资产</option>
-                <option value="source">仅 Release 标签源码</option>
-              </select>
+            <label>跟踪分支、标签或 commit（可选）
+              <input value={ref} onChange={(event) => setRef(event.target.value)} placeholder="留空跟踪仓库默认分支，例如 main" />
             </label>
-            {installMode !== 'source' && (
-              <label>.tgz 资产文件名（可选）
-                <input value={asset} onChange={(event) => setAsset(event.target.value)} placeholder="plugin-1.0.0.tgz" />
-              </label>
-            )}
           </>
         )}
         <label className={styles.checkbox}><input type="checkbox" checked={enabled} onChange={(event) => setEnabled(event.target.checked)} />启用此插件</label>

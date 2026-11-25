@@ -1,27 +1,20 @@
 import { gt, prerelease, rcompare, valid } from 'semver'
 import type { InstalledPlugin, PluginEntry, PluginState } from '../shared/types.ts'
 
-export interface GithubAsset {
-  name: string
-  browser_download_url: string
-}
-
-export interface GithubRelease {
-  tag_name: string
-  html_url: string
-  draft: boolean
-  prerelease: boolean
-  assets: GithubAsset[]
+export interface GithubRemote {
+  commit: string
+  ref: string
+  version?: string
 }
 
 export interface InstallResolution {
   target: string
-  latestVersion: string
-  latestTag?: string
-  releaseUrl?: string
+  latestVersion?: string
+  remoteCommit?: string
+  ref?: string
 }
 
-export async function checkForUpdate(entry: PluginEntry, installed: InstalledPlugin, installedReleaseTag?: string): Promise<PluginState> {
+export async function checkForUpdate(entry: PluginEntry, installed: InstalledPlugin, installedCommit?: string): Promise<PluginState> {
   const checkedAt = new Date().toISOString()
   if (entry.source.type === 'npm') {
     const latestVersion = await npmLatestStable(entry.source.package)
@@ -31,13 +24,14 @@ export async function checkForUpdate(entry: PluginEntry, installed: InstalledPlu
       lastCheckedAt: checkedAt,
     }
   }
-  const release = await githubLatestRelease(entry.source.repo)
-  const latestVersion = normalizeVersion(release.tag_name)
+  const remote = await githubRemote(entry.source.repo, entry.source.ref)
+  const currentCommit = installed.commit ?? installedCommit
   return {
-    status: githubHasUpdate(release.tag_name, installed, installedReleaseTag) ? 'update' : 'latest',
-    latestVersion,
-    latestTag: release.tag_name,
-    releaseUrl: release.html_url,
+    status: currentCommit === undefined || currentCommit !== remote.commit ? 'update' : 'latest',
+    ...(remote.version === undefined ? {} : { latestVersion: remote.version }),
+    remoteCommit: remote.commit,
+    ...(currentCommit === undefined ? {} : { installedCommit: currentCommit }),
+    ref: remote.ref,
     lastCheckedAt: checkedAt,
   }
 }
@@ -48,26 +42,15 @@ export async function resolveInstallTarget(entry: PluginEntry, cached?: PluginSt
     return { target: `${entry.source.package}@${latestVersion}`, latestVersion }
   }
   const source = entry.source
-  const release = await githubLatestRelease(source.repo)
-  const latestVersion = normalizeVersion(release.tag_name)
-  const mode = source.installMode ?? 'auto'
-  const tarballs = release.assets.filter((asset) => /^[A-Za-z0-9._+-]+\.tgz$/.test(asset.name))
-  const selected = mode === 'source'
-    ? undefined
-    : source.asset !== undefined
-      ? tarballs.find((asset) => asset.name === source.asset)
-      : tarballs.length === 1 ? tarballs[0] : undefined
-  if (mode === 'asset' && selected === undefined) {
-    throw new Error(source.asset === undefined
-      ? '最新 Release 没有可唯一确定的 .tgz 资产，请在清单中指定 asset'
-      : `最新 Release 中找不到资产 ${source.asset}`)
-  }
-  if (!/^[A-Za-z0-9._+-]+$/.test(release.tag_name)) throw new Error('Release 标签包含不支持的字符')
+  const cachedMatches = cached?.remoteCommit !== undefined && (source.ref === undefined || cached.ref === source.ref)
+  const remote = cachedMatches
+    ? { commit: cached.remoteCommit!, ref: cached.ref ?? source.ref ?? 'main', ...(cached.latestVersion === undefined ? {} : { version: cached.latestVersion }) }
+    : await githubRemote(source.repo, source.ref)
   return {
-    target: selected?.browser_download_url ?? `git+https://github.com/${source.repo}.git#${release.tag_name}`,
-    latestVersion,
-    latestTag: release.tag_name,
-    releaseUrl: release.html_url,
+    target: `git+https://github.com/${source.repo}.git#${remote.commit}`,
+    ...(remote.version === undefined ? {} : { latestVersion: remote.version }),
+    remoteCommit: remote.commit,
+    ref: remote.ref,
   }
 }
 
@@ -90,35 +73,35 @@ export async function npmLatestStable(packageName: string): Promise<string> {
   return stable[0]!
 }
 
-export async function githubLatestRelease(repo: string): Promise<GithubRelease> {
-  const release = await fetchJson<GithubRelease>(`https://api.github.com/repos/${repo}/releases/latest`, {
-    accept: 'application/vnd.github+json',
-    'user-agent': 'dsh-fast-personal-plugin',
-    'x-github-api-version': '2022-11-28',
-  })
-  if (release.draft || release.prerelease || typeof release.tag_name !== 'string' || !Array.isArray(release.assets)) {
-    throw new Error('GitHub 返回了无效的 Release 信息')
-  }
-  return release
-}
-
-export function githubHasUpdate(latestTag: string, installed: InstalledPlugin, installedReleaseTag?: string): boolean {
-  if (installedReleaseTag !== undefined) return installedReleaseTag !== latestTag
-  const ref = gitRefOf(installed.spec)
-  if (ref !== null && !/^[0-9a-f]{40}$/i.test(ref)) return ref !== latestTag && ref !== `v${latestTag.replace(/^v/, '')}`
-  const latest = valid(normalizeVersion(latestTag))
-  const current = valid(installed.version)
-  if (latest !== null && current !== null) return gt(latest, current)
-  return installed.spec.includes('#') ? ref !== latestTag : true
-}
-
-export function normalizeVersion(version: string): string {
-  return version.trim().replace(/^v(?=\d)/i, '')
+export async function githubRemote(repo: string, requestedRef?: string): Promise<GithubRemote> {
+  const ref = requestedRef ?? await githubDefaultBranch(repo)
+  const commit = await fetchJson<{ sha?: unknown }>(`https://api.github.com/repos/${repo}/commits/${encodeURIComponent(ref)}`, githubHeaders())
+  if (typeof commit.sha !== 'string' || !/^[0-9a-f]{40}$/i.test(commit.sha)) throw new Error(`无法解析 ${repo}#${ref} 的 commit`)
+  let version: string | undefined
+  try {
+    const manifest = await fetchJson<{ version?: unknown }>(`https://raw.githubusercontent.com/${repo}/${commit.sha}/package.json`, {})
+    if (typeof manifest.version === 'string') version = manifest.version
+  } catch { /* a missing package version does not affect commit-based updates */ }
+  return { commit: commit.sha, ref, ...(version === undefined ? {} : { version }) }
 }
 
 export function gitRefOf(spec: string): string | null {
   const index = spec.lastIndexOf('#')
   return index < 0 ? null : spec.slice(index + 1)
+}
+
+async function githubDefaultBranch(repo: string): Promise<string> {
+  const metadata = await fetchJson<{ default_branch?: unknown }>(`https://api.github.com/repos/${repo}`, githubHeaders())
+  if (typeof metadata.default_branch !== 'string' || metadata.default_branch === '') throw new Error(`无法读取 ${repo} 的默认分支`)
+  return metadata.default_branch
+}
+
+function githubHeaders(): Record<string, string> {
+  return {
+    accept: 'application/vnd.github+json',
+    'user-agent': 'dsh-fast-personal-plugin',
+    'x-github-api-version': '2022-11-28',
+  }
 }
 
 async function fetchJson<T>(url: string, headers: Record<string, string>): Promise<T> {
@@ -127,11 +110,6 @@ async function fetchJson<T>(url: string, headers: Record<string, string>): Promi
     signal: AbortSignal.timeout(10_000),
     redirect: 'follow',
   })
-  if (response.status === 404 && url.includes('/releases/latest')) {
-    const error = new Error('该 GitHub 仓库没有正式 Release') as Error & { code?: string }
-    error.code = 'NO_RELEASE'
-    throw error
-  }
   if (!response.ok) throw new Error(`${new URL(url).hostname} 返回 HTTP ${response.status}`)
   return await response.json() as T
 }

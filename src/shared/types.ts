@@ -13,8 +13,7 @@ export interface NpmSource {
 export interface GithubSource {
   type: 'github'
   repo: string
-  installMode?: 'auto' | 'asset' | 'source'
-  asset?: string
+  ref?: string
 }
 
 export type PluginSource = NpmSource | GithubSource
@@ -38,17 +37,18 @@ export interface InstalledPlugin {
   spec: string
   enabled: boolean
   repository?: string
+  commit?: string
 }
 
-export type UpdateStatus = 'idle' | 'checking' | 'latest' | 'update' | 'error' | 'no-release'
+export type UpdateStatus = 'idle' | 'checking' | 'latest' | 'update' | 'error'
 
 export interface PluginState {
   status: UpdateStatus
   latestVersion?: string
-  latestTag?: string
-  releaseUrl?: string
+  remoteCommit?: string
+  installedCommit?: string
+  ref?: string
   lastCheckedAt?: string
-  installedReleaseTag?: string
   error?: string
 }
 
