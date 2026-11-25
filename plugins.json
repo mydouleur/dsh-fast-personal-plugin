@@ -1,5 +1,38 @@
 {
   "$schema": "https://raw.githubusercontent.com/mydouleur/dsh-fast-personal-plugin/main/plugins.schema.json",
   "schemaVersion": 1,
-  "plugins": []
+  "plugins": [
+    {
+      "id": "npm:dsh-free-search",
+      "source": {
+        "type": "npm",
+        "package": "dsh-free-search"
+      },
+      "enabled": true
+    },
+    {
+      "id": "npm:dsh-taskboard",
+      "source": {
+        "type": "npm",
+        "package": "dsh-taskboard"
+      },
+      "enabled": true
+    },
+    {
+      "id": "npm:dsh-better-sidebar",
+      "source": {
+        "type": "npm",
+        "package": "dsh-better-sidebar"
+      },
+      "enabled": true
+    },
+    {
+      "id": "npm:dsh-plugin-wallpaper-engine",
+      "source": {
+        "type": "npm",
+        "package": "dsh-plugin-wallpaper-engine"
+      },
+      "enabled": true
+    }
+  ]
 }
