@@ -105,6 +105,10 @@ export function App() {
             await post('config', { config })
             setModal(null)
           })}
+          onImportDefaults={async () => {
+            await post('defaults')
+            setModal(null)
+          }}
         />
       )}
     </div>
@@ -231,11 +235,12 @@ function PluginForm(props: { original?: PluginEntry; onClose: () => void; onSave
   )
 }
 
-function JsonEditor(props: { onClose: () => void; onSave: (config: unknown) => void }) {
+function JsonEditor(props: { onClose: () => void; onSave: (config: unknown) => void; onImportDefaults: () => Promise<void> }) {
   const snapshot = getSnapshot()
   const initial = useMemo(() => JSON.stringify(snapshot.config, null, 2), [])
   const [text, setText] = useState(initial)
   const [error, setError] = useState('')
+  const [importing, setImporting] = useState(false)
   const save = (): void => {
     try {
       props.onSave(JSON.parse(text))
@@ -243,12 +248,24 @@ function JsonEditor(props: { onClose: () => void; onSave: (config: unknown) => v
       setError(cause instanceof Error ? cause.message : String(cause))
     }
   }
+  const importDefaults = async (): Promise<void> => {
+    setError('')
+    setImporting(true)
+    try {
+      await props.onImportDefaults()
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : String(cause))
+    } finally {
+      setImporting(false)
+    }
+  }
   return (
     <Modal title="JSON 清单" onClose={props.onClose} wide>
-      <p className={styles.help}>可在此直接编辑或粘贴其他电脑的清单。删除已安装插件会在保存后卸载；管理器自身会被自动保留。</p>
+      <p className={styles.help}>可在此直接编辑或粘贴其他电脑的清单。删除已安装插件会在保存后卸载；管理器自身会被自动保留。导入最新默认 JSON 只补充缺失项，不覆盖现有配置。</p>
       <textarea className={styles.jsonInput} value={text} onChange={(event) => setText(event.target.value)} spellCheck={false} />
       {error !== '' && <div className={styles.inlineError}>{error}</div>}
       <div className={styles.modalActions}>
+        <button className={styles.secondary} onClick={() => void importDefaults()} disabled={importing}>{importing ? '正在拉取…' : '导入最新默认 JSON'}</button>
         <label className={styles.secondary}>导入文件<input className={styles.fileInput} type="file" accept="application/json,.json" onChange={(event) => {
           const file = event.target.files?.[0]
           if (file !== undefined) void file.text().then(setText)

@@ -57,6 +57,22 @@ export class ConfigStore {
     return removed.filter((entry) => !isSelfEntry(entry))
   }
 
+  async importDefaults(): Promise<number> {
+    return this.merge(await defaultFetch(DEFAULT_CONFIG_URL))
+  }
+
+  merge(nextValue: unknown): number {
+    const next = normalizeConfig(nextValue)
+    const existing = new Set(this.config.plugins.map((entry) => entry.id))
+    const additions = next.plugins.filter((entry) => !existing.has(entry.id))
+    if (additions.length === 0) return 0
+    this.config.plugins.push(...additions)
+    const imported = new Set(additions.map((entry) => entry.id))
+    this.state.pendingRemovals = this.state.pendingRemovals.filter((entry) => !imported.has(entry.id))
+    this.commit()
+    return additions.length
+  }
+
   upsert(entry: PluginEntry, originalId?: string): PluginEntry[] {
     const next = this.config.plugins.filter((candidate) => candidate.id !== entry.id && candidate.id !== originalId)
     next.push(entry)

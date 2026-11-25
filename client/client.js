@@ -77,46 +77,46 @@ window.__ModuleLoader__.load({
 			document.head.appendChild(tag);
 		}
 		var styles_module_css_default = {
-			"headerActions": "w2pR0a_headerActions",
-			"overlay": "w2pR0a_overlay",
-			"success": "w2pR0a_success",
-			"wide": "w2pR0a_wide",
-			"danger": "w2pR0a_danger",
-			"spacer": "w2pR0a_spacer",
-			"cardMain": "w2pR0a_cardMain",
-			"badge": "w2pR0a_badge",
-			"tasks": "w2pR0a_tasks",
-			"taskOutput": "w2pR0a_taskOutput",
-			"source": "w2pR0a_source",
-			"fileInput": "w2pR0a_fileInput",
-			"meta": "w2pR0a_meta",
-			"redDot": "w2pR0a_redDot",
-			"warning": "w2pR0a_warning",
-			"muted": "w2pR0a_muted",
-			"error": "w2pR0a_error",
-			"help": "w2pR0a_help",
-			"form": "w2pR0a_form",
-			"jsonInput": "w2pR0a_jsonInput",
-			"rowActions": "w2pR0a_rowActions",
-			"checkbox": "w2pR0a_checkbox",
-			"empty": "w2pR0a_empty",
-			"footer": "w2pR0a_footer",
-			"iconButton": "w2pR0a_iconButton",
-			"modalHeader": "w2pR0a_modalHeader",
-			"list": "w2pR0a_list",
-			"header": "w2pR0a_header",
-			"modalActions": "w2pR0a_modalActions",
-			"inlineError": "w2pR0a_inlineError",
-			"card": "w2pR0a_card",
-			"dangerButton": "w2pR0a_dangerButton",
-			"titleLine": "w2pR0a_titleLine",
 			"modal": "w2pR0a_modal",
-			"secondary": "w2pR0a_secondary",
-			"summary": "w2pR0a_summary",
+			"success": "w2pR0a_success",
+			"taskOutput": "w2pR0a_taskOutput",
+			"badge": "w2pR0a_badge",
 			"primary": "w2pR0a_primary",
-			"attention": "w2pR0a_attention",
+			"summary": "w2pR0a_summary",
+			"jsonInput": "w2pR0a_jsonInput",
+			"secondary": "w2pR0a_secondary",
+			"source": "w2pR0a_source",
+			"empty": "w2pR0a_empty",
+			"error": "w2pR0a_error",
+			"danger": "w2pR0a_danger",
+			"rowActions": "w2pR0a_rowActions",
+			"wide": "w2pR0a_wide",
 			"root": "w2pR0a_root",
-			"selfBadge": "w2pR0a_selfBadge"
+			"selfBadge": "w2pR0a_selfBadge",
+			"meta": "w2pR0a_meta",
+			"warning": "w2pR0a_warning",
+			"attention": "w2pR0a_attention",
+			"inlineError": "w2pR0a_inlineError",
+			"spacer": "w2pR0a_spacer",
+			"redDot": "w2pR0a_redDot",
+			"headerActions": "w2pR0a_headerActions",
+			"header": "w2pR0a_header",
+			"titleLine": "w2pR0a_titleLine",
+			"card": "w2pR0a_card",
+			"footer": "w2pR0a_footer",
+			"help": "w2pR0a_help",
+			"cardMain": "w2pR0a_cardMain",
+			"fileInput": "w2pR0a_fileInput",
+			"iconButton": "w2pR0a_iconButton",
+			"modalActions": "w2pR0a_modalActions",
+			"tasks": "w2pR0a_tasks",
+			"list": "w2pR0a_list",
+			"form": "w2pR0a_form",
+			"modalHeader": "w2pR0a_modalHeader",
+			"muted": "w2pR0a_muted",
+			"overlay": "w2pR0a_overlay",
+			"checkbox": "w2pR0a_checkbox",
+			"dangerButton": "w2pR0a_dangerButton"
 		};
 		// src/client/App.tsx
 		function App() {
@@ -258,7 +258,11 @@ window.__ModuleLoader__.load({
 						onSave: (config) => void run(async () => {
 							await post("config", { config });
 							setModal(null);
-						})
+						}),
+						onImportDefaults: async () => {
+							await post("defaults");
+							setModal(null);
+						}
 					})
 				]
 			});
@@ -485,11 +489,23 @@ window.__ModuleLoader__.load({
 			const initial = (0, react.useMemo)(() => JSON.stringify(snapshot.config, null, 2), []);
 			const [text, setText] = (0, react.useState)(initial);
 			const [error, setError] = (0, react.useState)("");
+			const [importing, setImporting] = (0, react.useState)(false);
 			const save = () => {
 				try {
 					props.onSave(JSON.parse(text));
 				} catch (cause) {
 					setError(cause instanceof Error ? cause.message : String(cause));
+				}
+			};
+			const importDefaults = async () => {
+				setError("");
+				setImporting(true);
+				try {
+					await props.onImportDefaults();
+				} catch (cause) {
+					setError(cause instanceof Error ? cause.message : String(cause));
+				} finally {
+					setImporting(false);
 				}
 			};
 			return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)(Modal, {
@@ -499,7 +515,7 @@ window.__ModuleLoader__.load({
 				children: [
 					/* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
 						className: styles_module_css_default.help,
-						children: "可在此直接编辑或粘贴其他电脑的清单。删除已安装插件会在保存后卸载；管理器自身会被自动保留。"
+						children: "可在此直接编辑或粘贴其他电脑的清单。删除已安装插件会在保存后卸载；管理器自身会被自动保留。导入最新默认 JSON 只补充缺失项，不覆盖现有配置。"
 					}),
 					/* @__PURE__ */ (0, react_jsx_runtime.jsx)("textarea", {
 						className: styles_module_css_default.jsonInput,
@@ -514,6 +530,12 @@ window.__ModuleLoader__.load({
 					/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 						className: styles_module_css_default.modalActions,
 						children: [
+							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
+								className: styles_module_css_default.secondary,
+								onClick: () => void importDefaults(),
+								disabled: importing,
+								children: importing ? "正在拉取…" : "导入最新默认 JSON"
+							}),
 							/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("label", {
 								className: styles_module_css_default.secondary,
 								children: ["导入文件", /* @__PURE__ */ (0, react_jsx_runtime.jsx)("input", {

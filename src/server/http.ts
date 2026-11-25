@@ -54,6 +54,10 @@ export function mountRoutes(webServer: WebServerService, manager: PluginManager)
       manager.replaceConfig(field(body, 'config'))
       sendJson(response, 200, manager.snapshot())
     }),
+    route('defaults', 'POST', async (_request, response) => {
+      const imported = await manager.importDefaults()
+      sendJson(response, 200, { imported, snapshot: manager.snapshot() })
+    }),
   ]
   const disposers = routes.map((item) => webServer.register(item))
   return () => { for (const dispose of disposers) dispose() }

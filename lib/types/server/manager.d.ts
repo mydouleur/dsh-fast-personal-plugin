@@ -21,6 +21,7 @@ export declare class PluginManager {
     toggle(id: string, enabled: boolean): PluginTask;
     saveEntry(value: unknown, originalId?: string): void;
     replaceConfig(value: unknown): void;
+    importDefaults(): Promise<number>;
     exportConfig(): PluginsFile;
     dispose(): void;
     private discoverInstalled;

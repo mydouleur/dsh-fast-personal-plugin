@@ -1,6 +1,6 @@
 {
   "name": "dsh-fast-personal-plugin",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Personal DSH plugin list with npm versions, GitHub branch and commit updates, JSON import/export, and multi-machine bootstrap.",
   "type": "module",
   "main": "lib/index.js",

@@ -129,6 +129,12 @@ export class PluginManager {
     this.discoverInstalled()
   }
 
+  async importDefaults(): Promise<number> {
+    const imported = await this.store.importDefaults()
+    this.discoverInstalled()
+    return imported
+  }
+
   exportConfig(): PluginsFile {
     return this.store.config
   }

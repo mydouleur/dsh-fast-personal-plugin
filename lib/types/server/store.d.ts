@@ -5,6 +5,8 @@ export declare class ConfigStore {
     defaultsError?: string;
     initialize(fetchDefault?: (url: string) => Promise<unknown>): Promise<PluginEntry[]>;
     replace(nextValue: unknown): PluginEntry[];
+    importDefaults(): Promise<number>;
+    merge(nextValue: unknown): number;
     upsert(entry: PluginEntry, originalId?: string): PluginEntry[];
     remove(id: string): PluginEntry | null;
     setEnabled(id: string, enabled: boolean): PluginEntry;
