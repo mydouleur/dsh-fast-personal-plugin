@@ -1,0 +1,32 @@
+import { type ManagerSnapshot, type PluginTask, type PluginsFile } from '../shared/types.ts';
+import { type LoaderHandle } from './loader.ts';
+import { ConfigStore } from './store.ts';
+export declare class PluginManager {
+    readonly profile: string;
+    private readonly loader?;
+    readonly store: ConfigStore;
+    ready: boolean;
+    checking: boolean;
+    private readonly tasks;
+    private readonly queue;
+    private running;
+    private nextTaskId;
+    private disposed;
+    constructor(profile: string, loader?: LoaderHandle | undefined);
+    start(): Promise<void>;
+    snapshot(): ManagerSnapshot;
+    checkUpdates(): Promise<void>;
+    install(id: string): PluginTask;
+    remove(id: string): PluginTask;
+    toggle(id: string, enabled: boolean): PluginTask;
+    saveEntry(value: unknown, originalId?: string): void;
+    replaceConfig(value: unknown): void;
+    exportConfig(): PluginsFile;
+    dispose(): void;
+    private discoverInstalled;
+    private enqueueRemoval;
+    private enqueue;
+    private pump;
+    private execute;
+    private log;
+}

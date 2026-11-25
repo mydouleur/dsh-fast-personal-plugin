@@ -1,0 +1,86 @@
+{
+  "name": "dsh-fast-personal-plugin",
+  "version": "0.1.0",
+  "description": "Personal DSH plugin list with npm and GitHub Release updates, JSON import/export, and multi-machine bootstrap.",
+  "type": "module",
+  "main": "lib/index.js",
+  "types": "lib/types/index.d.ts",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mydouleur/dsh-fast-personal-plugin.git"
+  },
+  "engines": {
+    "node": "^22.19.0 || >=24.0.0"
+  },
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek-harness",
+    "plugin-manager"
+  ],
+  "scripts": {
+    "build": "npm run build:server && npm run build:client",
+    "build:server": "node -e \"fs.rmSync('lib',{recursive:true,force:true})\" && tsc -p tsconfig.server.json",
+    "build:client": "tsdown",
+    "typecheck": "npm run typecheck:server && npm run typecheck:client",
+    "typecheck:server": "tsc -p tsconfig.server.json --noEmit",
+    "typecheck:client": "tsc -p tsconfig.client.json --noEmit",
+    "check": "npm run typecheck && npm run build",
+    "prepack": "npm run build"
+  },
+  "dependencies": {
+    "semver": "7.8.6"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "4.1.0"
+  },
+  "peerDependenciesMeta": {
+    "@deepseek-ai/cordis": {
+      "optional": true
+    }
+  },
+  "exports": {
+    ".": {
+      "types": "./lib/types/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./client": "./client/client.js",
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./plugins.json": "./plugins.json",
+    "./plugins.schema.json": "./plugins.schema.json",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib",
+    "client",
+    "src",
+    "cordis.patch.yml",
+    "plugins.json",
+    "plugins.schema.json",
+    "LICENSE"
+  ],
+  "devDependencies": {
+    "@types/node": "24.13.3",
+    "@types/react": "18.3.31",
+    "@types/react-dom": "18.3.1",
+    "@types/semver": "7.7.1",
+    "lightningcss": "1.33.0",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "tsdown": "0.23.7",
+    "typescript": "7.0.2"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "inject": [
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-ui-settings"
+      ],
+      "platform": "web"
+    }
+  }
+}

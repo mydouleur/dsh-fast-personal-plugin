@@ -1,0 +1,10 @@
+import { type PluginEntry, type PluginsFile, type PluginSource } from '../shared/types.ts';
+export declare function validPackageName(value: string): boolean;
+export declare function githubRepoOf(value: unknown): string | null;
+export declare function entryId(source: PluginSource): string;
+export declare function isSelfPackage(name: string): boolean;
+export declare function isSelfEntry(entry: PluginEntry): boolean;
+export declare function normalizeSource(value: unknown): PluginSource;
+export declare function normalizeEntry(value: unknown): PluginEntry;
+export declare function normalizeConfig(value: unknown): PluginsFile;
+export declare function emptyConfig(): PluginsFile;
