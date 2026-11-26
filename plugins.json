@@ -33,6 +33,14 @@
         "package": "dsh-plugin-wallpaper-engine"
       },
       "enabled": true
+    },
+    {
+      "id": "github:mydouleur/dsh-opencode-auto",
+      "source": {
+        "type": "github",
+        "repo": "mydouleur/dsh-opencode-auto"
+      },
+      "enabled": true
     }
   ]
 }
